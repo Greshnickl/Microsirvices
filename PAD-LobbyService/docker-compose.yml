@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres-lobby:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: lobbydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_lobby_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lobby-service-python:
+    build: .
+    ports:
+      - "3005:3005"
+    environment:
+      DB_HOST: postgres-lobby
+      DB_NAME: lobbydb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+    depends_on:
+      postgres-lobby:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_lobby_data:

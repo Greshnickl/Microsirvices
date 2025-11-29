@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres-ghost:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ghostdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_ghost_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ghost-service-python:
+    build: .
+    ports:
+      - "3007:3007"
+    environment:
+      DB_HOST: postgres-ghost
+      DB_NAME: ghostdb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+    depends_on:
+      postgres-ghost:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_ghost_data:

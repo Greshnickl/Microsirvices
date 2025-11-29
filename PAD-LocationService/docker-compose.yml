@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres-location:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: locationdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_location_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  location-service-python:
+    build: .
+    ports:
+      - "3008:3008"
+    environment:
+      DB_HOST: postgres-location
+      DB_NAME: locationdb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+    depends_on:
+      postgres-location:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_location_data:

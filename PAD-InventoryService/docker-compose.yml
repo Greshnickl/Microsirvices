@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres-inventory:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: inventorydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_inventory_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inventory-service-python:
+    build: .
+    ports:
+      - "3009:3009"
+    environment:
+      DB_HOST: postgres-inventory
+      DB_NAME: inventorydb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_inventory_data:

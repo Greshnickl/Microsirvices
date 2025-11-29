@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres-map:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mapdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_map_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  map-service-python:
+    build: .
+    ports:
+      - "3006:3006"
+    environment:
+      DB_HOST: postgres-map
+      DB_NAME: mapdb
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+    depends_on:
+      postgres-map:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_map_data:
